@@ -1,0 +1,60 @@
+version: "3.3"
+services:
+  memcached:
+      image: memcached:1.4
+      ports:
+      - 11211:11211
+      networks: 
+        - phpdev-network
+      container_name: memcached
+  nginx:
+      image: tutum/nginx
+      ports:
+          - "80:80"
+      links:
+          - phpfpm
+      volumes:
+          - ./docker/nginx/nginx.conf:/etc/nginx/sites-available/default
+          - ./docker/nginx/nginx.conf:/etc/nginx/sites-enabled/default
+          - ./docker/nginx/nginx-error.log:/var/log/nginx/error.log
+          - ./docker/nginx/nginx-access.log:/var/log/nginx/access.log
+      networks: 
+        - phpdev-network    
+      container_name: nginx    
+  phpfpm:
+      build: ./docker/phpfpm
+      ports:
+          - "9000:9000"    
+      volumes:
+          - .:/usr/share/nginx/html
+      networks: 
+        - phpdev-network    
+      container_name: phpfpm    
+  mysql:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+    ports:
+      - "3306:3306" 
+    volumes:
+      - ./docker/mysql/data:/var/lib/mysql
+    networks: 
+        - phpdev-network
+    container_name: mysql
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    links:
+      - mysql:db
+    ports:
+      - 8183:80
+    environment:
+      PMA_USER: root
+      PMA_PASSWORD: admin
+      PMA_ARBITRARY: 1
+    networks: 
+        - phpdev-network
+    container_name: phpmyadmin
+networks: 
+  phpdev-network:
+    driver: bridge  
